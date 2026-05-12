@@ -259,8 +259,10 @@ const addToCart = (product: Product) => {
       ...product,
       quantity: 1
     })
+    
   }
 
+  console.log(product)
   showMessage('Product added to cart.')
 }
 
