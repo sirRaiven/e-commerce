@@ -1,369 +1,267 @@
 <template>
   <div>
-    <v-app-bar color="primary" elevation="2">
-      <v-container class="d-flex align-center">
-        <v-app-bar-title class="font-weight-bold">
-          Simple E-Commerce
-        </v-app-bar-title>
+    <!-- Header -->
+    <v-row class="mb-5">
+      <v-col cols="12">
+        <h1 class="text-h4 font-weight-bold">Product Catalog</h1>
 
-        <v-spacer />
+        <p>Browse vegetables and place your order.</p>
+      </v-col>
+    </v-row>
 
-        <v-btn variant="tonal" @click="cartDrawer = true">
-          Cart
-          <v-badge v-if="cart.length" :content="cart.length" color="error" inline />
-        </v-btn>
-      </v-container>
-    </v-app-bar>
-    <v-container class="py-8">
-      <v-row class="mb-6">
-        <v-col cols="12" md="8">
-          <h1 class="text-h4 font-weight-bold mb-2">
-            Products
-          </h1>
-          <p class="text-grey-darken-1">
-            Browse products, add to cart, and checkout.
-          </p>
-        </v-col>
+    <!-- Products -->
+    <v-row>
+      <v-col
+        v-for="product in products"
+        :key="product.id"
+        cols="12"
+        sm="6"
+        md="3"
+      >
+        <v-card elevation="3" rounded="lg">
+          <!-- Product Image -->
+          <v-img
+            :src="getProductImage(product)"
+            height="220"
+            cover
+            @click="openImage(product)"
+          />
 
-        <v-col cols="12" md="4">
-          <v-text-field v-model="search" label="Search product" prepend-inner-icon="mdi-magnify" variant="outlined"
-            density="comfortable" hide-details />
-        </v-col>
-      </v-row>
+          <!-- Product Details -->
+          <v-card-title>
+            {{ product.name }}
+          </v-card-title>
 
-      <v-alert v-if="errorMessage" type="error" variant="tonal" class="mb-4">
-        {{ errorMessage }}
-      </v-alert>
+          <v-card-subtitle> ₱ {{ product.price }} </v-card-subtitle>
 
-      <v-row v-if="loading">
-        <v-col v-for="n in 4" :key="n" cols="12" sm="6" md="3">
-          <v-skeleton-loader type="card" />
-        </v-col>
-      </v-row>
+          <v-card-text>
+            <div class="mb-2">
+              Unit:
+              {{ product.unit }}
+            </div>
 
-      <v-row v-else>
-        <v-col v-for="product in filteredProducts" :key="product.documentId" cols="12" sm="6" md="3">
-          <v-card class="h-100" rounded="xl" elevation="3">
-            <v-img :src="getProductImage(product)" height="180" cover />
+            <div>
+              {{ product.description }}
+            </div>
+          </v-card-text>
 
-            <v-card-title>
-              {{ product.name }}
-            </v-card-title>
-
-            <v-card-subtitle>
-              {{ product.category || 'General' }}
-            </v-card-subtitle>
-
-            <v-card-text>
-              <p class="text-body-2 mb-3">
-                {{ product.description || 'No description available.' }}
-              </p>
-
-              <div class="text-h6 font-weight-bold">
-                ₱{{ formatCurrency(product.price) }}
-              </div>
-
-              <div class="text-caption text-grey">
-                Stock: {{ product.stock }}
-              </div>
-            </v-card-text>
-
-            <v-card-actions>
-              <v-btn block color="primary" :disabled="product.stock <= 0" @click="addToCart(product)">
-                Add to Cart
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
-
-
-    <v-navigation-drawer v-model="cartDrawer" location="right" width="420" temporary>
-      <v-toolbar color="primary">
-        <v-toolbar-title>My Cart</v-toolbar-title>
-        <v-spacer />
-        <v-btn icon="mdi-close" @click="cartDrawer = false" />
-      </v-toolbar>
-
-      <div class="pa-4">
-        <v-alert v-if="!cart.length" type="info" variant="tonal">
-          Your cart is empty.
-        </v-alert>
-
-        <template v-else>
-          <v-list>
-            <v-list-item v-for="item in cart" :key="item.documentId" class="border rounded-lg mb-2">
-              <v-list-item-title class="font-weight-bold">
-                {{ item.name }}
-              </v-list-item-title>
-
-              <v-list-item-subtitle>
-                ₱{{ formatCurrency(item.price) }} × {{ item.quantity }}
-              </v-list-item-subtitle>
-
-              <template #append>
-                <div class="d-flex align-center ga-1">
-                  <v-btn size="small" icon="mdi-minus" variant="tonal" @click="decreaseQty(item.documentId)" />
-
-                  <v-btn size="small" icon="mdi-plus" variant="tonal" @click="increaseQty(item.documentId)" />
-
-                  <v-btn size="small" icon="mdi-delete" color="error" variant="tonal"
-                    @click="removeFromCart(item.documentId)" />
-                </div>
-              </template>
-            </v-list-item>
-          </v-list>
-
-          <v-divider class="my-4" />
-
-          <div class="d-flex justify-space-between text-h6 font-weight-bold mb-4">
-            <span>Total</span>
-            <span>₱{{ formatCurrency(cartTotal) }}</span>
+          <!-- Quantity -->
+          <div class="px-4">
+            <v-text-field
+              v-model="product.qty"
+              label="Quantity"
+              type="number"
+              variant="outlined"
+              density="comfortable"
+            />
           </div>
 
-          <v-text-field v-model="checkout.customer_name" label="Customer Name" variant="outlined"
-            density="comfortable" />
+          <!-- Total -->
+          <div class="px-4 pb-2">
+            <strong> Total: ₱ {{ computeTotal(product) }} </strong>
+          </div>
 
-          <v-text-field v-model="checkout.customer_email" label="Email" variant="outlined" density="comfortable" />
+          <!-- Actions -->
+          <v-card-actions>
+            <v-btn block color="success" @click="openOrder(product)">
+              Order Item
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
 
-          <v-text-field v-model="checkout.customer_phone" label="Phone" variant="outlined" density="comfortable" />
+    <!-- IMAGE PREVIEW -->
+    <v-dialog v-model="imageDialog" max-width="700">
+      <v-card>
+        <v-img :src="selectedImage" height="600" contain />
 
-          <v-textarea v-model="checkout.address" label="Address" variant="outlined" rows="3" />
+        <v-card-actions>
+          <v-spacer />
 
-          <v-btn block color="success" size="large" :loading="checkoutLoading" @click="submitOrder">
-            Checkout
+          <v-btn color="red" @click="imageDialog = false"> Close </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- ORDER MODAL -->
+    <v-dialog v-model="orderDialog" max-width="500">
+      <v-card>
+        <!-- Title -->
+        <v-card-title class="font-weight-bold"> Order Product </v-card-title>
+
+        <!-- Product Image -->
+        <v-img
+          v-if="selectedProduct"
+          :src="getProductImage(selectedProduct)"
+          height="600"
+          contain
+        />
+
+        <!-- Product Details -->
+        <v-card-text>
+          <div v-if="selectedProduct" class="mb-4">
+            <div class="text-h6 font-weight-bold">
+              {{ selectedProduct.name }}
+            </div>
+
+            <div class="text-subtitle-1">₱ {{ selectedProduct.price }}</div>
+
+            <div class="text-body-2">Unit: {{ selectedProduct.unit }}</div>
+            <div class="text-body-2">
+              Description: {{ selectedProduct.description }}
+            </div>
+          </div>
+
+          <!-- Buyer Name -->
+          <v-text-field
+            v-model="customer_name"
+            label="Buyer Name"
+            variant="outlined"
+          />
+
+          <!-- Mobile Number -->
+          <v-text-field
+            v-model="mobile_number"
+            label="Mobile Number"
+            type="number"
+            variant="outlined"
+          />
+
+          <!-- Quantity -->
+          <v-text-field
+            v-model="order_qty"
+            label="Quantity"
+            type="number"
+            variant="outlined"
+          />
+
+          <!-- Auto Computed Price -->
+          <v-text-field
+            :model-value="'₱ ' + orderTotal"
+            label="Total Price"
+            readonly
+            variant="outlined"
+          />
+        </v-card-text>
+
+        <!-- Buttons -->
+        <v-card-actions>
+          <v-spacer />
+
+          <v-btn color="red" variant="text" @click="orderDialog = false">
+            Cancel
           </v-btn>
-        </template>
-      </div>
-    </v-navigation-drawer>
 
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color">
-      {{ snackbar.message }}
-    </v-snackbar>
+          <v-btn color="success" @click="submitOrder"> Submit Order </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
-<script setup lang="ts">
-//@ts-nocheck
-type Product = {
-  documentId: string
-  name: string
-  description?: string
-  price: number
-  stock: number
-  category?: string
-  image?: any
-}
+<script setup>
+const products = ref([]);
 
-type CartItem = Product & {
-  quantity: number
-}
+const imageDialog = ref(false);
+const selectedImage = ref("");
 
-const config = useRuntimeConfig()
+const orderDialog = ref(false);
 
-const products = ref<Product[]>([])
-const cart = ref<CartItem[]>([])
-const loading = ref(false)
-const checkoutLoading = ref(false)
-const errorMessage = ref('')
-const search = ref('')
-const cartDrawer = ref(false)
+const selectedProduct = ref(null);
 
-const checkout = reactive({
-  customer_name: '',
-  customer_email: '',
-  customer_phone: '',
-  address: ''
-})
+const customer_name = ref("");
+const mobile_number = ref("");
+const order_qty = ref(1);
 
-const snackbar = reactive({
-  show: false,
-  message: '',
-  color: 'success'
-})
+const orderTotal = computed(() => {
+  if (!selectedProduct.value) return 0;
 
-const filteredProducts = computed(() => {
-  if (!search.value) return products.value
-
-  return products.value.filter((product) =>
-    product.name.toLowerCase().includes(search.value.toLowerCase())
-  )
-})
-
-const cartTotal = computed(() => {
-  return cart.value.reduce((total, item) => {
-    return total + Number(item.price) * item.quantity
-  }, 0)
-})
-
-const formatCurrency = (value: number) => {
-  return Number(value || 0).toLocaleString('en-PH', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })
-}
-
-const showMessage = (message: string, color = 'success') => {
-  snackbar.message = message
-  snackbar.color = color
-  snackbar.show = true
-}
-
-const getProductImage = (product: Product) => {
-  const imageUrl = product.image?.url
-
-  if (imageUrl) {
-    return `${config.public.strapiUrl}${imageUrl}`
-  }
-
-  return 'https://placehold.co/600x400?text=Product'
-}
+  return Number(selectedProduct.value.price) * Number(order_qty.value);
+});
 
 const fetchProducts = async () => {
-  loading.value = true
-  errorMessage.value = ''
-
   try {
-    const response: any = await $fetch('/api/products', {
-      baseURL: config.public.strapiUrl,
-      query: {
-        populate: '*',
-        'filters[is_active][$eq]': true,
-        'sort[0]': 'createdAt:desc'
-      }
-    })
+    const response = await $fetch(
+      "http://localhost:1337/api/products?populate=*",
+    );
 
-    products.value = response.data || []
+    products.value = response.data.map((item) => ({
+      ...item,
+      qty: 1,
+    }));
   } catch (error) {
-    errorMessage.value = 'Unable to load products. Please check your Strapi server.'
-  } finally {
-    loading.value = false
+    console.log(error);
   }
-}
+};
 
-const addToCart = (product: Product) => {
-  const existingItem = cart.value.find(
-    (item) => item.documentId === product.documentId
-  )
-
-  if (existingItem) {
-    if (existingItem.quantity >= product.stock) {
-      showMessage('Not enough stock available.', 'error')
-      return
-    }
-
-    existingItem.quantity++
-  } else {
-    cart.value.push({
-      ...product,
-      quantity: 1
-    })
-    
+const getProductImage = (product) => {
+  if (product.image?.url) {
+    return `http://localhost:1337${product.image.url}`;
   }
 
-  console.log(product)
-  showMessage('Product added to cart.')
-}
+  return "https://placehold.co/600x400?text=No+Image";
+};
 
-const increaseQty = (documentId: string) => {
-  const item = cart.value.find((cartItem) => cartItem.documentId === documentId)
+const computeTotal = (product) => {
+  return Number(product.price) * Number(product.qty || 1);
+};
 
-  if (!item) return
+const openImage = (product) => {
+  selectedImage.value = `http://localhost:1337${product.image.url}`;
 
-  if (item.quantity >= item.stock) {
-    showMessage('Not enough stock available.', 'error')
-    return
-  }
+  imageDialog.value = true;
+};
 
-  item.quantity++
-}
+const openOrder = (product) => {
+  selectedProduct.value = product;
 
-const decreaseQty = (documentId: string) => {
-  const item = cart.value.find((cartItem) => cartItem.documentId === documentId)
+  order_qty.value = product.qty || 1;
 
-  if (!item) return
-
-  if (item.quantity <= 1) {
-    removeFromCart(documentId)
-  } else {
-    item.quantity--
-  }
-}
-
-const removeFromCart = (documentId: string) => {
-  cart.value = cart.value.filter((item) => item.documentId !== documentId)
-}
-
-const validateCheckout = () => {
-  if (!checkout.customer_name) return 'Customer name is required.'
-  if (!checkout.customer_email) return 'Customer email is required.'
-  if (!checkout.customer_phone) return 'Customer phone is required.'
-  if (!checkout.address) return 'Address is required.'
-  if (!cart.value.length) return 'Cart is empty.'
-
-  return ''
-}
+  orderDialog.value = true;
+};
 
 const submitOrder = async () => {
-  const validationError = validateCheckout()
-
-  if (validationError) {
-    showMessage(validationError, 'error')
-    return
+  if (!customer_name.value) {
+    alert("Buyer name is required");
+    return;
   }
 
-  checkoutLoading.value = true
+  if (!mobile_number.value) {
+    alert("Mobile number is required");
+    return;
+  }
 
   try {
-    await $fetch('/api/orders', {
-      baseURL: config.public.strapiUrl,
-      method: 'POST',
+    await $fetch("http://localhost:1337/api/orders", {
+      method: "POST",
+
       body: {
         data: {
-          customer_name: checkout.customer_name,
-          customer_email: checkout.customer_email,
-          customer_phone: checkout.customer_phone,
-          address: checkout.address,
-          items: cart.value.map((item) => ({
-            product_document_id: item.documentId,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            subtotal: Number(item.price) * item.quantity
-          })),
-          total_amount: cartTotal.value,
-          order_status: 'Pending'
-        }
-      }
-    })
+          buyer_name: customer_name.value,
+          mobile_number: mobile_number.value,
+          quantity: order_qty.value,
+          total_price: orderTotal.value,
+          product_name: selectedProduct.value.name,
+        },
+      },
+    });
 
-    cart.value = []
-    checkout.customer_name = ''
-    checkout.customer_email = ''
-    checkout.customer_phone = ''
-    checkout.address = ''
-    cartDrawer.value = false
+    alert("Order submitted successfully!");
 
-    showMessage('Order submitted successfully.')
+    customer_name.value = "";
+    mobile_number.value = "";
+    order_qty.value = 1;
+
+    orderDialog.value = false;
   } catch (error) {
-    showMessage('Unable to submit order.', 'error')
-  } finally {
-    checkoutLoading.value = false
+    console.log(error);
+
+    alert("Unable to submit order");
   }
-}
+};
 
 onMounted(() => {
-  fetchProducts()
-})
+  fetchProducts();
+});
 </script>
-
-<style>
-html {
-  background: #f5f5f5;
-}
-
-.border {
-  border: 1px solid #e0e0e0;
-}
-</style>

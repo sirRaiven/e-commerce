@@ -14,15 +14,11 @@
     "name": {
       "type": "string"
     },
-    "description": {
+    "unit": {
       "type": "text"
     },
     "price": {
       "type": "decimal",
-      "default": 0
-    },
-    "stock": {
-      "type": "integer",
       "default": 0
     },
     "image": {
@@ -35,12 +31,8 @@
         "audios"
       ]
     },
-    "category": {
-      "type": "string"
-    },
-    "is_active": {
-      "type": "boolean",
-      "default": true
+    "description": {
+      "type": "text"
     }
   }
 }

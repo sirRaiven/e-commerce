@@ -11,32 +11,20 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "customer_name": {
+    "buyer_name": {
       "type": "string"
     },
-    "customer_email": {
-      "type": "email"
-    },
-    "customer_phone": {
+    "mobile_number": {
       "type": "string"
     },
-    "address": {
+    "product_name": {
       "type": "text"
     },
-    "items": {
-      "type": "json"
-    },
-    "total_amount": {
+    "quantity": {
       "type": "decimal"
     },
-    "order_status": {
-      "type": "enumeration",
-      "default": "Pending",
-      "enum": [
-        "Pending",
-        "Paid",
-        "Cancelled"
-      ]
+    "total_price": {
+      "type": "decimal"
     }
   }
 }
