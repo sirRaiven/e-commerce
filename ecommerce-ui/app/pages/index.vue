@@ -1,5 +1,15 @@
 <template>
   <div>
+    <!-- Navigation Bar -->
+    <v-app-bar color="primary" elevation="2">
+      <v-app-bar-title class="font-weight-bold">
+        Simple E-Commerce
+      </v-app-bar-title>
+
+      <v-spacer />
+
+      <v-btn variant="outlined" @click="addDialog = true"> Add Product </v-btn>
+    </v-app-bar>
     <!-- Header -->
     <v-row class="mb-5">
       <v-col cols="12">
@@ -157,6 +167,58 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- ADD PRODUCT DIALOG -->
+    <v-dialog v-model="addDialog" max-width="600">
+      <v-card>
+        <v-card-title> Add Product </v-card-title>
+
+        <v-card-text>
+          <v-text-field
+            v-model="addName"
+            label="Product Name"
+            variant="outlined"
+          />
+
+          <v-text-field
+            v-model="addPrice"
+            label="Price"
+            type="number"
+            variant="outlined"
+          />
+
+          <v-text-field
+            v-model="addUnit"
+            label="Unit"
+            placeholder="kg / piece / pack"
+            variant="outlined"
+          />
+
+          <v-textarea
+            v-model="addDescription"
+            label="Description"
+            variant="outlined"
+          />
+
+          <v-file-input
+            v-model="addImage"
+            label="Product Image"
+            accept="image/*"
+            variant="outlined"
+          />
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+
+          <v-btn color="red" variant="text" @click="addDialog = false">
+            Cancel
+          </v-btn>
+
+          <v-btn color="success" @click="createProduct"> Save Product </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -167,12 +229,19 @@ const imageDialog = ref(false);
 const selectedImage = ref("");
 
 const orderDialog = ref(false);
+const addDialog = ref(false);
 
 const selectedProduct = ref(null);
 
 const customer_name = ref("");
 const mobile_number = ref("");
 const order_qty = ref(1);
+
+const addName = ref("");
+const addPrice = ref(0);
+const addUnit = ref("");
+const addDescription = ref("");
+const addImage = ref(null);
 
 const orderTotal = computed(() => {
   if (!selectedProduct.value) return 0;
@@ -258,6 +327,58 @@ const submitOrder = async () => {
     console.log(error);
 
     alert("Unable to submit order");
+  }
+};
+
+// ADD PRODUCT
+const createProduct = async () => {
+  try {
+    let imageId = null;
+
+    // Upload image
+    if (addImage.value) {
+      const formData = new FormData();
+
+      formData.append("files", addImage.value);
+
+      const uploadResponse = await $fetch("http://localhost:1337/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      imageId = uploadResponse[0].id;
+    }
+
+    // Save Product
+    await $fetch("http://localhost:1337/api/products", {
+      method: "POST",
+
+      body: {
+        data: {
+          name: addName.value,
+          price: addPrice.value,
+          unit: addUnit.value,
+          description: addDescription.value,
+          image: imageId,
+        },
+      },
+    });
+
+    alert("Product added successfully!");
+
+    addDialog.value = false;
+
+    addName.value = "";
+    addPrice.value = 0;
+    addUnit.value = "";
+    addDescription.value = "";
+    addImage.value = null;
+
+    fetchProducts();
+  } catch (error) {
+    console.log(error);
+
+    alert("Unable to save product");
   }
 };
 
